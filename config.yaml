@@ -1,0 +1,18 @@
+base: gcr.io/distroless/static:nonroot
+
+annotations:
+  hey: this
+  is: cool
+
+layers:
+- files:
+  - name: hello
+    contents: hello
+  - name: world
+    contents: world
+
+- files:
+  - name: seeya
+    contents: fella
+  - name: goodbye
+    contents: later
