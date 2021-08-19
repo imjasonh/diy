@@ -9,6 +9,8 @@ annotations:
   is: cool
 
 layers:
+- archive: https://partner-images.canonical.com/oci/impish/20210817/ubuntu-impish-oci-amd64-root.tar.gz
+
 - files:
   - name: hello
     contents: hello

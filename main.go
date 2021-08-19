@@ -7,8 +7,11 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -85,7 +88,7 @@ func main() {
 			}
 
 			if err := tw.WriteHeader(&tar.Header{
-				Name: filepath.Clean(ff.Name),
+				Name: fn,
 				Size: int64(size),
 				Mode: ff.Mode,
 			}); err != nil {
@@ -94,7 +97,47 @@ func main() {
 			if _, err := tw.Write(data); err != nil {
 				log.Fatal(err)
 			}
+			log.Println("wrote:", fn)
 		}
+
+		if l.Archive != "" {
+			resp, err := http.Get(l.Archive)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				io.Copy(os.Stderr, resp.Body)
+				log.Fatal(resp.Status)
+			}
+			gzr, err := gzip.NewReader(resp.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			tr := tar.NewReader(gzr)
+			for {
+				th, err := tr.Next()
+				if err == io.EOF {
+					break
+				} else if err != nil {
+					log.Fatal(err)
+				}
+				fn := filepath.Clean(th.Name)
+				if _, found := filenames[fn]; found {
+					log.Println("skipping archive file:", th.Name)
+					continue
+				}
+				th.Name = fn
+				if err := tw.WriteHeader(th); err != nil {
+					log.Fatal(err)
+				}
+				if _, err := io.Copy(tw, tr); err != nil {
+					log.Fatal(err)
+				}
+				log.Println("wrote:", fn)
+			}
+		}
+
 		if err := tw.Flush(); err != nil {
 			log.Fatal(err)
 		}
@@ -149,6 +192,8 @@ type config struct {
 }
 
 type layer struct {
+	Archive string
+	// TODO digest
 	Files []file
 }
 
