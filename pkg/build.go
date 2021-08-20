@@ -61,7 +61,7 @@ func Build(cfg Config, verbose bool) (v1.Image, error) {
 		sort.Slice(l.Files, func(i, j int) bool { return l.Files[i].Name < l.Files[j].Name })
 		filenames := map[string]struct{}{}
 		var buf bytes.Buffer
-		tw := tar.NewWriter(&buf)
+		tw := tar.NewWriter(&buf) // TODO stream this.
 		for _, ff := range l.Files {
 			fn := filepath.Clean(ff.Name)
 			if fn == "" {
