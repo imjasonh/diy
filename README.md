@@ -1,42 +1,43 @@
 # DIY: Declarative Image YAML
 
-WIP: describe image contents/metadata in a YAML file, and make it so.
+Describe image contents and metadata in a YAML file, and make it so.
+
+**This is an experimental work in progress. Don't use it for anything serious. If you want something like this, let me know how you would use it.**
 
 Inspired by Bazel's rules_docker, but doesn't require Bazel.
 
-Also inspired by all the Dockerfiles out there that are only `FROM`, `COPY`, `ADD`, etc., and never `RUN` anything, but doesn't require `docker` and a container runtime.
+If you have a Dockerfile that only contains `FROM`, `COPY`, `ADD`, etc., and never `RUN`, then you might be able to use this.
+
+This tool doesn't require a container runtime like `docker build` does, which may make it safer/better to use in a containerized CI environment.
+
+It doesn't currently enforce reproducibililty, but it might help with it, and could be extended to reject non-reproducible inputs in the future.
 
 ## Example
 
-config.yaml:
+See [`config.yaml`](./config.yaml) for full usage.
 
 ```yaml
 base: gcr.io/distroless/static:nonroot
 
-annotations:
-  hey: this
-  is: cool
-
 layers:
+- archive: https://partner-images.canonical.com/oci/impish/20210817/ubuntu-impish-oci-amd64-root.tar.gz
+  sha256: 7dec15764407aeb0cebd5840798c15651bc13a7ded07c70fe2699051311baa50
+
 - files:
   - name: hello
     contents: hello
   - name: world
     contents: world
-
-- files:
-  - name: seeya
-    contents: fella
-  - name: goodbye
-    contents: later
 ```
 
 ```console
 $ go run ./ -f config.yaml -t <my-image>
 ```
 
-This will push an image as described in the YAML:
-
-- based on gcr.io/distroless/static:nonroot
-- containing the specified annotations
-- containing two layers each with two files, as described
+TODO:
+- fetch and install .debs
+- enforce better security/reproducibility
+- build OCI images by default
+- cache remote archives for speed
+- support building manifest lists / OCI indexes, possibly with templating
+- kontain.me

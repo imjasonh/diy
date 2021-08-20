@@ -3,25 +3,28 @@ base: gcr.io/distroless/static:nonroot
 config:
   user: alice
   workingdir: "/workspace" # NB: workingDir is invalid :(
+  labels:
+    cool: a label
 
 annotations:
   hey: this
-  is: cool
+  is: cool too
 
 layers:
 - archive: https://partner-images.canonical.com/oci/impish/20210817/ubuntu-impish-oci-amd64-root.tar.gz
+  sha256: 7dec15764407aeb0cebd5840798c15651bc13a7ded07c70fe2699051311baa50
+  # Override file contents in the layer from archive.
+  files:
+  - name: usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0
+    contents: this should be fine
 
 - files:
   - name: hello
-    contents: hello
-  - name: world
     contents: world
     mode: 0644
 
 - files:
   - name: seeya
     contents: fella
-  - name: goodbye
-    contents: later
   - name: cool
     data: 8J+lsA==

@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"crypto/sha256"
 	"encoding/base64"
 	"flag"
 	"fmt"
@@ -27,8 +28,9 @@ import (
 )
 
 var (
-	fn  = flag.String("f", "", "config file")
-	dst = flag.String("t", "", "tag to push")
+	fn      = flag.String("f", "", "config file")
+	dst     = flag.String("t", "", "tag to push")
+	verbose = flag.Bool("v", false, "verbose logging")
 )
 
 func main() {
@@ -97,7 +99,9 @@ func main() {
 			if _, err := tw.Write(data); err != nil {
 				log.Fatal(err)
 			}
-			log.Println("wrote:", fn)
+			if *verbose {
+				log.Println("wrote:", fn)
+			}
 		}
 
 		if l.Archive != "" {
@@ -110,7 +114,8 @@ func main() {
 				io.Copy(os.Stderr, resp.Body)
 				log.Fatal(resp.Status)
 			}
-			gzr, err := gzip.NewReader(resp.Body)
+			sha := sha256.New()
+			gzr, err := gzip.NewReader(io.TeeReader(resp.Body, sha))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -124,7 +129,9 @@ func main() {
 				}
 				fn := filepath.Clean(th.Name)
 				if _, found := filenames[fn]; found {
-					log.Println("skipping archive file:", th.Name)
+					if *verbose {
+						log.Println("skipping archive file:", th.Name)
+					}
 					continue
 				}
 				th.Name = fn
@@ -134,7 +141,20 @@ func main() {
 				if _, err := io.Copy(tw, tr); err != nil {
 					log.Fatal(err)
 				}
-				log.Println("wrote:", fn)
+				if *verbose {
+					log.Println("wrote:", fn)
+				}
+			}
+
+			// TODO: require sha256
+			if l.SHA256 != "" {
+				got := fmt.Sprintf("%x", sha.Sum(nil))
+				if got != l.SHA256 {
+					log.Fatalf("fetching %s: digest mismatch; got %q, want %q", l.Archive, got, l.SHA256)
+				}
+				if *verbose {
+					log.Println("sha256 matched!")
+				}
 			}
 		}
 
@@ -193,6 +213,7 @@ type config struct {
 
 type layer struct {
 	Archive string
+	SHA256  string
 	// TODO digest
 	Files []file
 }
