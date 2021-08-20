@@ -57,6 +57,11 @@ func build() *cobra.Command {
 				return err
 			}
 
+			dstref, err := name.ParseReference(path.Join(repo, cfg.Name))
+			if err != nil {
+				return err
+			}
+
 			// Resolve and build the image.
 			if err := pkg.Resolve(&cfg, verbose); err != nil {
 				return err
@@ -67,10 +72,6 @@ func build() *cobra.Command {
 			}
 
 			// Push the image.
-			dstref, err := name.ParseReference(path.Join(repo, cfg.Name))
-			if err != nil {
-				return err
-			}
 			if err := remote.Write(dstref, img, remote.WithAuthFromKeychain(authn.DefaultKeychain)); err != nil {
 				return err
 			}
