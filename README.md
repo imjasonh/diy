@@ -12,11 +12,20 @@ This tool doesn't require a container runtime like `docker build` does, which ma
 
 It doesn't currently enforce reproducibililty, but it might help with it, and could be extended to reject non-reproducible inputs in the future.
 
+## `DIY_REPO` env var
+
+You must set the `DIY_REPO` env var to the image repository you want to push to.
+This will be combined with the image name in the config to produce the desired image location.
+
+With `DIY_REPO=gcr.io/foo`, the config below will push the image to `gcr.io/foo/test/image`.
+
 ## Example
 
 See [`config.yaml`](./config.yaml) for full usage.
 
 ```yaml
+name: test/image
+
 base: gcr.io/distroless/static:nonroot
 
 layers:

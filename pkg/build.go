@@ -191,7 +191,7 @@ func Build(cfg Config, verbose bool) (v1.Image, error) {
 }
 
 type Config struct {
-	Base        string
+	Name, Base  string
 	Annotations map[string]string
 	Layers      []layer
 	Config      *v1.Config

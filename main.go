@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"path"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -16,18 +18,22 @@ import (
 
 var (
 	fn      = flag.String("f", "", "config file")
-	dst     = flag.String("t", "", "tag to push")
 	verbose = flag.Bool("v", false, "verbose logging")
 )
 
 func main() {
 	flag.Parse()
 
+	repo := os.Getenv("DIY_REPO")
+	if repo == "" {
+		log.Fatal("must set DIY_REPO env var")
+	}
+
+	// Parse the config YAML.
 	b, err := ioutil.ReadFile(*fn)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	var cfg pkg.Config
 	dec := yaml.NewDecoder(bytes.NewReader(b))
 	dec.KnownFields(true)
@@ -35,6 +41,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Resolve and build the image.
 	if err := pkg.Resolve(&cfg, *verbose); err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +50,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dstref, err := name.ParseReference(*dst)
+	// Push the image.
+	dstref, err := name.ParseReference(path.Join(repo, cfg.Name))
 	if err != nil {
 		log.Fatal(err)
 	}

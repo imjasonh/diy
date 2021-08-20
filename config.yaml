@@ -1,3 +1,5 @@
+name: test/image
+
 base: gcr.io/distroless/static:nonroot
 
 config:
