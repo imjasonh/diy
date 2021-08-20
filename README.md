@@ -40,7 +40,7 @@ layers:
 ```
 
 ```console
-$ go run ./ -f config.yaml -t <my-image>
+$ go run ./ build
 ```
 
 TODO:
