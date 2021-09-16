@@ -13,8 +13,10 @@ annotations:
   is: cool too
 
 layers:
-- archive: https://partner-images.canonical.com/oci/impish/20210817/ubuntu-impish-oci-amd64-root.tar.gz
-  sha256: 7dec15764407aeb0cebd5840798c15651bc13a7ded07c70fe2699051311baa50
+- archive:
+    url: https://partner-images.canonical.com/oci/impish/20210913/ubuntu-impish-oci-amd64-root.tar.gz
+    sha256: a8cb4eb74f7b22bad76b72793cce864706aaa82299e0ac0581de79eca510b7b4
+    size: 29528000
   # Override file contents in the layer from archive.
   files:
   - name: usr/lib/x86_64-linux-gnu/libcrypt.so.1.1.0

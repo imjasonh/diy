@@ -29,8 +29,10 @@ name: test/image
 base: gcr.io/distroless/static:nonroot
 
 layers:
-- archive: https://partner-images.canonical.com/oci/impish/20210817/ubuntu-impish-oci-amd64-root.tar.gz
-  sha256: 7dec15764407aeb0cebd5840798c15651bc13a7ded07c70fe2699051311baa50
+- archive:
+    url: https://partner-images.canonical.com/oci/impish/20210817/ubuntu-impish-oci-amd64-root.tar.gz
+    sha256: 7dec15764407aeb0cebd5840798c15651bc13a7ded07c70fe2699051311baa50
+    size: 29528000
 
 - files:
   - name: hello

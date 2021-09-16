@@ -101,8 +101,18 @@ func Build(cfg Config, verbose bool) (v1.Image, error) {
 			}
 		}
 
-		if l.Archive != "" {
-			resp, err := http.Get(l.Archive)
+		if l.Archive != nil {
+			if l.Archive.URL == "" {
+				return nil, errors.New(".archive.url is required if archive is specified")
+			}
+			if l.Archive.SHA256 == "" {
+				return nil, errors.New(".archive.sha256 is required if archive is specified")
+			}
+			if l.Archive.Size == 0 {
+				return nil, errors.New(".archive.size is required if archive is specified")
+			}
+
+			resp, err := http.Get(l.Archive.URL)
 			if err != nil {
 				return nil, fmt.Errorf("http.Get: %w", err)
 			}
@@ -111,8 +121,12 @@ func Build(cfg Config, verbose bool) (v1.Image, error) {
 				io.Copy(os.Stderr, resp.Body)
 				return nil, errors.New(resp.Status)
 			}
+			if resp.ContentLength != l.Archive.Size {
+				return nil, fmt.Errorf("size mismatch: got %d, want %d", resp.ContentLength, l.Archive.Size)
+			}
+
 			sha := sha256.New()
-			gzr, err := gzip.NewReader(io.TeeReader(resp.Body, sha))
+			gzr, err := gzip.NewReader(io.TeeReader(io.LimitReader(resp.Body, l.Archive.Size), sha))
 			if err != nil {
 				return nil, fmt.Errorf("gzip.NewReader: %w", err)
 			}
@@ -143,15 +157,12 @@ func Build(cfg Config, verbose bool) (v1.Image, error) {
 				}
 			}
 
-			// TODO: require sha256
-			if l.SHA256 != "" {
-				got := fmt.Sprintf("%x", sha.Sum(nil))
-				if got != l.SHA256 {
-					return nil, fmt.Errorf("fetching %s: digest mismatch; got %q, want %q", l.Archive, got, l.SHA256)
-				}
-				if verbose {
-					log.Println("sha256 matched!")
-				}
+			got := fmt.Sprintf("%x", sha.Sum(nil))
+			if got != l.Archive.SHA256 {
+				return nil, fmt.Errorf("fetching %s: digest mismatch; got %q, want %q", l.Archive, got, l.Archive.SHA256)
+			}
+			if verbose {
+				log.Println("sha256 matched!")
 			}
 		}
 
@@ -198,9 +209,14 @@ type Config struct {
 }
 
 type layer struct {
-	Archive string
-	SHA256  string
+	Archive *archive
 	Files   []file
+}
+
+type archive struct {
+	URL    string
+	SHA256 string
+	Size   int64
 }
 
 type file struct {
