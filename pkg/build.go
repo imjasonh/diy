@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
@@ -24,13 +25,13 @@ import (
 	"github.com/imdario/mergo"
 )
 
-func Resolve(cfg *Config, verbose bool) error {
+func Resolve(ctx context.Context, cfg *Config, verbose bool) error {
 	if cfg.Base != "" {
 		br, err := name.ParseReference(cfg.Base)
 		if err != nil {
 			return fmt.Errorf("name.ParseReference(%q): %w", cfg.Base, err)
 		}
-		desc, err := remote.Head(br)
+		desc, err := remote.Head(br, remote.WithContext(ctx))
 		if err != nil {
 			return fmt.Errorf("remote.Head(%q): %w", br, err)
 		}
@@ -43,14 +44,14 @@ func Resolve(cfg *Config, verbose bool) error {
 	return nil
 }
 
-func Build(cfg Config, verbose bool) (v1.Image, error) {
+func Build(ctx context.Context, cfg Config, verbose bool) (v1.Image, error) {
 	var img v1.Image = empty.Image
 	if cfg.Base != "" {
 		br, err := name.ParseReference(cfg.Base)
 		if err != nil {
 			return nil, fmt.Errorf("name.ParseReference(%q): %w", cfg.Base, err)
 		}
-		img, err = remote.Image(br)
+		img, err = remote.Image(br, remote.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("remote.Image: %w", err)
 		}
@@ -112,7 +113,11 @@ func Build(cfg Config, verbose bool) (v1.Image, error) {
 				return nil, errors.New(".archive.size is required if archive is specified")
 			}
 
-			resp, err := http.Get(l.Archive.URL)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, l.Archive.URL, nil)
+			if err != nil {
+				return nil, fmt.Errorf("http.NewRequest: %w", err)
+			}
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				return nil, fmt.Errorf("http.Get: %w", err)
 			}

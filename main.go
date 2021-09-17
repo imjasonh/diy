@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -40,6 +42,9 @@ func build() *cobra.Command {
 		Short:        "Build and push an image",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer cancel()
+
 			repo := os.Getenv("DIY_REPO")
 			if repo == "" {
 				return errors.New("must set DIY_REPO env var")
@@ -62,11 +67,11 @@ func build() *cobra.Command {
 				return err
 			}
 
-			// Resolve and build the image.
-			if err := pkg.Resolve(&cfg, verbose); err != nil {
+			// Resolve the config and build the image.
+			if err := pkg.Resolve(ctx, &cfg, verbose); err != nil {
 				return err
 			}
-			img, err := pkg.Build(cfg, verbose)
+			img, err := pkg.Build(ctx, cfg, verbose)
 			if err != nil {
 				return err
 			}
@@ -96,6 +101,9 @@ func resolve() *cobra.Command {
 		Short:        "Resolve mutable references in a config file",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer cancel()
+
 			// Parse the config YAML.
 			b, err := ioutil.ReadFile(fn)
 			if err != nil {
@@ -108,8 +116,8 @@ func resolve() *cobra.Command {
 				return err
 			}
 
-			// Resolve and build the image.
-			if err := pkg.Resolve(&cfg, verbose); err != nil {
+			// Resolve the config.
+			if err := pkg.Resolve(ctx, &cfg, verbose); err != nil {
 				return err
 			}
 
