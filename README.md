@@ -1,3 +1,7 @@
+# This experiment is over. Try [`apko`](https://github.com/chainguard-dev/apko) for a real thing.
+
+---
+
 # DIY: Declarative Image YAML
 
 Describe image contents and metadata in a YAML file, and make it so.
